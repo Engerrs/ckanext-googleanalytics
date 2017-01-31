@@ -17,6 +17,9 @@ from paste.util.multidict import MultiDict
 from ckan.controllers.api import ApiController
 from ckan.controllers.package import PackageController
 from ckan.common import g
+
+is_using_cloudstorage = False
+
 if 'cloudstorage' in g.plugins:
     is_using_cloudstorage = True
     from ckanext.cloudstorage.controller import StorageController
