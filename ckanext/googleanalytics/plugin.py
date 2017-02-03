@@ -15,6 +15,10 @@ import urllib2
 import threading
 import Queue
 
+from pylons import config
+import ckan.logic as logic
+from ckan.common import c
+
 log = logging.getLogger('ckanext.googleanalytics')
 
 class GoogleAnalyticsException(Exception):
@@ -184,7 +188,10 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
         See ITemplateHelpers.
 
         '''
-        return {'googleanalytics_header': self.googleanalytics_header}
+        return {
+            'googleanalytics_header': self.googleanalytics_header,
+            'ga_test_custom': self.ga_test_custom
+        }
 
     def googleanalytics_header(self):
         '''Render the googleanalytics_header snippet for CKAN 2.0 templates.
@@ -199,3 +206,20 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
                 'googleanalytics_fields': str(self.googleanalytics_fields)}
         return p.toolkit.render_snippet(
             'googleanalytics/snippets/googleanalytics_header.html', data)
+
+    def ga_test_custom(self, package_id):
+
+        data_for_dimensions = config.get('ga_custom_dim').split()
+        collect_data = []
+        for idx, data in enumerate(data_for_dimensions):
+            if '->' in data:
+                data_field = data.rsplit('->', 1)[1]
+                data_dict = data = data.rsplit('->', 1)[0]
+            if data in c.pkg_dict:
+                data = c.pkg_dict[data]
+                if isinstance(data, dict):
+                    data = c.pkg_dict[data_dict][data_field]
+            dimension_number = 'dimension' + str(idx + 1)
+            gg = {'dimension': dimension_number, 'data': data}
+            collect_data.append(gg)
+        return collect_data

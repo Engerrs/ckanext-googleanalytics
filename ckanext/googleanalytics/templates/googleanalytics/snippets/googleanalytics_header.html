@@ -6,5 +6,10 @@
 
   ga('create', '{{googleanalytics_id}}', '{{googleanalytics_domain}}', {{googleanalytics_fields|safe}});
   ga('set', 'anonymizeIp', true);
+{% if c.pkg.id or c.pkg_dict.id %}
+  {% for data in h.ga_test_custom(c.pkg.id or c.pkg_dict.id) -%}
+	  ga('set', '{{ data.dimension }}', '{{ data.data }}');
+  {% endfor %}
+{% endif %}
   ga('send', 'pageview');
 </script>
