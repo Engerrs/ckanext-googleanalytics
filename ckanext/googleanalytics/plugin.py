@@ -190,7 +190,7 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
         '''
         return {
             'googleanalytics_header': self.googleanalytics_header,
-            'ga_test_custom': self.ga_test_custom
+            'googleanalytics_custom_dimensions': self.googleanalytics_custom_dimensions
         }
 
     def googleanalytics_header(self):
@@ -207,19 +207,34 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
         return p.toolkit.render_snippet(
             'googleanalytics/snippets/googleanalytics_header.html', data)
 
-    def ga_test_custom(self, package_id):
-
-        data_for_dimensions = config.get('ga_custom_dim').split()
+    def googleanalytics_custom_dimensions(self, package_id):
+        data_for_dimensions = config.get(
+            'googleanalytics.custom_dimensions').split()
         collect_data = []
         for idx, data in enumerate(data_for_dimensions):
+            if data.endswith('(count)'):
+                data = data.replace('(count)', '')
+                data_index = False
             if '->' in data:
-                data_field = data.rsplit('->', 1)[1]
-                data_dict = data = data.rsplit('->', 1)[0]
+                if data.count('->') == 1:
+                    data_field = data.rsplit('->', 1)[1]
+                    data_dict = data = data.rsplit('->', 1)[0]
+                elif data.count('->') == 2:
+                    data_options = data.rsplit('->', 2)
+                    data_name = data = data_options[0]
+                    data_index = data_options[1]
+                    data_field = data_options[2]
             if data in c.pkg_dict:
                 data = c.pkg_dict[data]
                 if isinstance(data, dict):
-                    data = c.pkg_dict[data_dict][data_field]
+                        data = c.pkg_dict[data_dict][data_field]
+                if isinstance(data, list):
+                    if data_index:
+                        data_index = int(data_index)
+                        data = c.pkg_dict[data_name][data_index][data_field]
+                    else:
+                        data = len(data)
             dimension_number = 'dimension' + str(idx + 1)
-            gg = {'dimension': dimension_number, 'data': data}
-            collect_data.append(gg)
+            dimension = {'dimension': dimension_number, 'data': data}
+            collect_data.append(dimension)
         return collect_data
