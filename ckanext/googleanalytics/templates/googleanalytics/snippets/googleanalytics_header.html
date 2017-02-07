@@ -6,7 +6,7 @@
 
   ga('create', '{{googleanalytics_id}}', '{{googleanalytics_domain}}', {{googleanalytics_fields|safe}});
   ga('set', 'anonymizeIp', true);
-{% if c.pkg.id or c.pkg_dict.id %}
+{% if c.pkg_dict.id and h.googleanalytics_custom_dimensions(c.pkg.id or c.pkg_dict.id) %}
   {% for data in h.googleanalytics_custom_dimensions(c.pkg.id or c.pkg_dict.id) -%}
 	  ga('set', '{{ data.dimension }}', '{{ data.data }}');
   {% endfor %}

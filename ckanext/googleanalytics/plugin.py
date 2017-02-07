@@ -208,33 +208,45 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
             'googleanalytics/snippets/googleanalytics_header.html', data)
 
     def googleanalytics_custom_dimensions(self, package_id):
-        data_for_dimensions = config.get(
-            'googleanalytics.custom_dimensions').split()
-        collect_data = []
-        for idx, data in enumerate(data_for_dimensions):
-            if data.endswith('(count)'):
-                data = data.replace('(count)', '')
-                data_index = False
-            if '->' in data:
-                if data.count('->') == 1:
-                    data_field = data.rsplit('->', 1)[1]
-                    data_dict_name = data = data.rsplit('->', 1)[0]
-                elif data.count('->') == 2:
-                    data_options = data.rsplit('->', 2)
-                    data_name = data = data_options[0]
-                    data_index = data_options[1]
-                    data_field = data_options[2]
-            if data in c.pkg_dict:
-                data = c.pkg_dict[data]
-                if isinstance(data, dict):
-                        data = c.pkg_dict[data_dict_name][data_field]
-                elif isinstance(data, list):
-                    if data_index:
-                        data_index = int(data_index)
-                        data = c.pkg_dict[data_name][data_index][data_field]
-                    else:
-                        data = len(data)
-            dimension_number = 'dimension' + str(idx + 1)
-            dimension = {'dimension': dimension_number, 'data': data}
-            collect_data.append(dimension)
-        return collect_data
+        if config.get('googleanalytics.custom_dimensions'):
+            collect_data = []
+            parameters_for_dimensions = config.get('googleanalytics.custom_dimensions').split()
+            for idx, field in enumerate(parameters_for_dimensions):
+                list_count = False
+                list_with_index = False
+                if field.endswith('(count)'):
+                    field = field.replace('(count)', '')
+                    list_count = True
+                elif '->' in field:
+                    if field.count('->') == 1:
+                        data_field = field.rsplit('->', 1)
+                        field_name = field = data_field[0]
+                        field_param = data_field[1]
+                    elif field.count('->') == 2:
+                        data_field = field.rsplit('->', 2)
+                        field_name = field = data_field[0]
+                        field_index = int(data_field[1])
+                        filed_param_name = data_field[2]
+                        list_with_index = True
+                if field in c.pkg_dict:
+                    field = c.pkg_dict[field]
+                    if isinstance(field, dict):
+                        field = c.pkg_dict[field_name][field_param]
+                    elif isinstance(field, list):
+                        if list_count:
+                            field = len(field)
+                        elif list_with_index:
+                            if c.pkg_dict[field_name]:
+                                if filed_param_name in c.pkg_dict[field_name][field_index]:
+                                    field = c.pkg_dict[field_name][field_index][filed_param_name]
+                                else:
+                                    field = field_name
+                            else:
+                                field = field_name
+                        else:
+                            field = data_field
+                dimension_number = 'dimension' + str(idx + 1)
+                dimension = {'dimension': dimension_number, 'data': field}
+                collect_data.append(dimension)
+            return collect_data
+        return
