@@ -218,7 +218,7 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
             if '->' in data:
                 if data.count('->') == 1:
                     data_field = data.rsplit('->', 1)[1]
-                    data_dict = data = data.rsplit('->', 1)[0]
+                    data_dict_name = data = data.rsplit('->', 1)[0]
                 elif data.count('->') == 2:
                     data_options = data.rsplit('->', 2)
                     data_name = data = data_options[0]
@@ -227,8 +227,8 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
             if data in c.pkg_dict:
                 data = c.pkg_dict[data]
                 if isinstance(data, dict):
-                        data = c.pkg_dict[data_dict][data_field]
-                if isinstance(data, list):
+                        data = c.pkg_dict[data_dict_name][data_field]
+                elif isinstance(data, list):
                     if data_index:
                         data_index = int(data_index)
                         data = c.pkg_dict[data_name][data_index][data_field]
