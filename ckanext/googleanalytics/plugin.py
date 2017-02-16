@@ -190,7 +190,8 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
         '''
         return {
             'googleanalytics_header': self.googleanalytics_header,
-            'googleanalytics_custom_dimensions': self.googleanalytics_custom_dimensions
+            'googleanalytics_custom_dimensions_datasets': self.googleanalytics_custom_dimensions_datasets,
+            'googleanalytics_custom_dimensions_organizations': self.googleanalytics_custom_dimensions_organizations
         }
 
     def googleanalytics_header(self):
@@ -207,46 +208,45 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
         return p.toolkit.render_snippet(
             'googleanalytics/snippets/googleanalytics_header.html', data)
 
-    def googleanalytics_custom_dimensions(self, package_id):
-        if config.get('googleanalytics.custom_dimensions'):
-            collect_data = []
-            parameters_for_dimensions = config.get('googleanalytics.custom_dimensions').split()
-            for idx, field in enumerate(parameters_for_dimensions):
-                list_count = False
-                list_with_index = False
-                if field.endswith('(count)'):
-                    field = field.replace('(count)', '')
-                    list_count = True
-                elif '->' in field:
-                    if field.count('->') == 1:
-                        data_field = field.rsplit('->', 1)
-                        field_name = field = data_field[0]
-                        field_param = data_field[1]
-                    elif field.count('->') == 2:
-                        data_field = field.rsplit('->', 2)
-                        field_name = field = data_field[0]
-                        field_index = int(data_field[1])
-                        filed_param_name = data_field[2]
-                        list_with_index = True
-                if field in c.pkg_dict:
-                    field = c.pkg_dict[field]
-                    if isinstance(field, dict):
-                        field = c.pkg_dict[field_name][field_param]
-                    elif isinstance(field, list):
-                        if list_count:
-                            field = len(field)
-                        elif list_with_index:
-                            if c.pkg_dict[field_name]:
-                                if filed_param_name in c.pkg_dict[field_name][field_index]:
-                                    field = c.pkg_dict[field_name][field_index][filed_param_name]
-                                else:
-                                    field = field_name
-                            else:
-                                field = field_name
-                        else:
-                            field = data_field
-                dimension_number = 'dimension' + str(idx + 1)
-                dimension = {'dimension': dimension_number, 'data': field}
-                collect_data.append(dimension)
-            return collect_data
+    def googleanalytics_custom_dimensions_datasets(self, package_id):
+        if config.get('googleanalytics.custom_dimensions2_dataset'):
+            collect_data2 = []
+            parameters_for_dimensions2 = config.get('googleanalytics.custom_dimensions2_dataset').split()
+            for data in parameters_for_dimensions2:
+                if 'dimension' in data and len(data.split('/')) == 2:
+                    data = data.split('/')
+                    field = data[0]
+                    dimension = data[1]
+                    if field in c.pkg_dict:
+                        data[0] = field.replace(field, c.pkg_dict[field])
+                        collect_data2.append(data)
+                    if '->' in field:
+                        fields = field.split('->')
+                        fields
+                        if fields[0] in c.pkg_dict:
+                            data = [c.pkg_dict[fields[0]][fields[1]], dimension]
+                        collect_data2.append(data)
+            return collect_data2
+        return
+
+    def googleanalytics_custom_dimensions_organizations(self, organization):
+        if organization['type'] == 'organization' and config.get('googleanalytics.custom_dimensions2_organization'):
+            collect_data2 = []
+            organization_dimensions = config.get('googleanalytics.custom_dimensions2_organization').split()
+            for data in organization_dimensions:
+                if 'dimension' in data and len(data.split('/')) == 2:
+                    data = data.split('/')
+                    field = data[0]
+                    dimension = data[1]
+                    print field
+                    if field in c.group_dict:
+                        data[0] = field.replace(field, c.group_dict[field])
+                        collect_data2.append(data)
+                    if '->' in field:
+                        fields = field.split('->')
+                        fields
+                        if fields[0] in c.group_dict:
+                            data = [c.group_dict[fields[0]][fields[1]], dimension]
+                        collect_data2.append(data)
+            return collect_data2
         return

@@ -6,10 +6,19 @@
 
   ga('create', '{{googleanalytics_id}}', '{{googleanalytics_domain}}', {{googleanalytics_fields|safe}});
   ga('set', 'anonymizeIp', true);
-{% if c.pkg_dict.id and h.googleanalytics_custom_dimensions(c.pkg.id or c.pkg_dict.id) %}
-  {% for data in h.googleanalytics_custom_dimensions(c.pkg.id or c.pkg_dict.id) -%}
-	  ga('set', '{{ data.dimension }}', '{{ data.data }}');
+{% set dataset =  h.googleanalytics_custom_dimensions_datasets %}
+{% set organization =  h.googleanalytics_custom_dimensions_organizations %}
+
+{% if c.pkg_dict.id and dataset(c.pkg or c.pkg_dict) %}
+  {% for data in dataset(c.pkg or c.pkg_dict) -%}
+    ga('set', '{{ data[1] }}', '{{ data[0] }}');
   {% endfor %}
 {% endif %}
+{% if c.group.id and organization(c.group_dict) %}
+  {% for data in organization(c.group_dict) -%}
+    ga('set', '{{ data[1] }}', '{{ data[0] }}');
+  {% endfor %}
+{% endif %}
+
   ga('send', 'pageview');
 </script>
