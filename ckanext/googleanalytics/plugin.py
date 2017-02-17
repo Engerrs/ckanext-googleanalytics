@@ -190,8 +190,7 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
         '''
         return {
             'googleanalytics_header': self.googleanalytics_header,
-            'googleanalytics_custom_dimensions_datasets': self.googleanalytics_custom_dimensions_datasets,
-            'googleanalytics_custom_dimensions_organizations': self.googleanalytics_custom_dimensions_organizations
+            'googleanalytics_custom_dimensions': self.googleanalytics_custom_dimensions,
         }
 
     def googleanalytics_header(self):
@@ -208,45 +207,41 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
         return p.toolkit.render_snippet(
             'googleanalytics/snippets/googleanalytics_header.html', data)
 
-    def googleanalytics_custom_dimensions_datasets(self, package_id):
-        if config.get('googleanalytics.custom_dimensions2_dataset'):
+    def googleanalytics_custom_dimensions(self, package=False, group=False, resource=False):
+        if config.get('googleanalytics.custom_dimensions'):
             collect_data2 = []
-            parameters_for_dimensions2 = config.get('googleanalytics.custom_dimensions2_dataset').split()
+            parameters_for_dimensions2 = config.get('googleanalytics.custom_dimensions').split()
             for data in parameters_for_dimensions2:
+                if data.startswith('user/'):
+                    user_dimension = data.split('/')
+                    if c.user:
+                        user_dimension[0] = c.user
+                    else:
+                        user_dimension[0] = 'anonymous'
+                    collect_data2.append(user_dimension)
+                elif package and data.startswith('d.'):
+                    data_dict = package
+                    data = data.replace('d.', '')
+                elif group and data.startswith('g.'):
+                    data_dict = group
+                    data = data.replace('g.', '')
+                elif resource and data.startswith('r.'):
+                    data_dict = resource
+                    data = data.replace('r.', '')
+                else:
+                    continue
                 if 'dimension' in data and len(data.split('/')) == 2:
                     data = data.split('/')
                     field = data[0]
                     dimension = data[1]
-                    if field in c.pkg_dict:
-                        data[0] = field.replace(field, c.pkg_dict[field])
+                    if field in data_dict:
+                        data[0] = field.replace(field, data_dict[field])
                         collect_data2.append(data)
                     if '->' in field:
                         fields = field.split('->')
                         fields
-                        if fields[0] in c.pkg_dict:
-                            data = [c.pkg_dict[fields[0]][fields[1]], dimension]
-                        collect_data2.append(data)
-            return collect_data2
-        return
-
-    def googleanalytics_custom_dimensions_organizations(self, organization):
-        if organization['type'] == 'organization' and config.get('googleanalytics.custom_dimensions2_organization'):
-            collect_data2 = []
-            organization_dimensions = config.get('googleanalytics.custom_dimensions2_organization').split()
-            for data in organization_dimensions:
-                if 'dimension' in data and len(data.split('/')) == 2:
-                    data = data.split('/')
-                    field = data[0]
-                    dimension = data[1]
-                    print field
-                    if field in c.group_dict:
-                        data[0] = field.replace(field, c.group_dict[field])
-                        collect_data2.append(data)
-                    if '->' in field:
-                        fields = field.split('->')
-                        fields
-                        if fields[0] in c.group_dict:
-                            data = [c.group_dict[fields[0]][fields[1]], dimension]
+                        if fields[0] in data_dict:
+                            data = [data_dict[fields[0]][fields[1]], dimension]
                         collect_data2.append(data)
             return collect_data2
         return

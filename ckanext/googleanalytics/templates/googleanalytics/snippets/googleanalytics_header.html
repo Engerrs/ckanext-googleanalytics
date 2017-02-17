@@ -6,19 +6,20 @@
 
   ga('create', '{{googleanalytics_id}}', '{{googleanalytics_domain}}', {{googleanalytics_fields|safe}});
   ga('set', 'anonymizeIp', true);
-{% set dataset =  h.googleanalytics_custom_dimensions_datasets %}
-{% set organization =  h.googleanalytics_custom_dimensions_organizations %}
+{% set get_dimensions =  h.googleanalytics_custom_dimensions %}
 
-{% if c.pkg_dict.id and dataset(c.pkg or c.pkg_dict) %}
-  {% for data in dataset(c.pkg or c.pkg_dict) -%}
+{% if c.pkg_dict.id and not c.resource and get_dimensions(c.pkg_dict) %}
+  {% for data in get_dimensions(c.pkg_dict) -%}
+    ga('set', '{{ data[1] }}', '{{ data[0] }}');
+  {% endfor %}
+{% elif c.group_dict and get_dimensions(False, c.group_dict) %}
+  {% for data in get_dimensions(False, c.group_dict) -%}
+    ga('set', '{{ data[1] }}', '{{ data[0] }}');
+  {% endfor %}
+{% elif not c.group_dict and c.resource and get_dimensions(False, False, c.resource) %}
+  {% for data in get_dimensions(False, False, c.resource) -%}
     ga('set', '{{ data[1] }}', '{{ data[0] }}');
   {% endfor %}
 {% endif %}
-{% if c.group.id and organization(c.group_dict) %}
-  {% for data in organization(c.group_dict) -%}
-    ga('set', '{{ data[1] }}', '{{ data[0] }}');
-  {% endfor %}
-{% endif %}
-
   ga('send', 'pageview');
 </script>
